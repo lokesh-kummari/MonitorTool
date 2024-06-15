@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Scan Results - Network Monitoring Tool</title>
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+  <style>
+    .container {
+      margin-top: 50px;
+    }
+    .table th, .table td {
+      vertical-align: middle;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2 class="mb-4">Connected Devices and Open Ports</h2>
+    <table class="table table-striped table-bordered">
+      <thead>
+        <tr>
+          <th>Device IP Address</th>
+          <th>Open Ports</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for device in devices %}
+        <tr>
+          <td>{{ device.ip }}</td>
+          <td>
+            <ul>
+              {% for port in device.ports %}
+              <li>{{ port }} - {{ port_descriptions[port] if port in port_descriptions else 'Unknown' }}</li>
+              {% endfor %}
+            </ul>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    <form action="/check_lan" method="post">
+      <button type="submit" class="btn btn-primary">Check LAN Status</button>
+    </form>
+  </div>
+</body>
+</html>
