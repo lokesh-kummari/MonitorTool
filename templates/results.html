@@ -1,8 +1,8 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Scan Results - Network Monitoring Tool</title>
   <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
   <style>
@@ -11,6 +11,21 @@
     }
     .table th, .table td {
       vertical-align: middle;
+    }
+    .network-map {
+      margin-top: 20px;
+      text-align: center;
+    }
+    .btn-primary {
+      background-color: #007bff;
+      border-color: #007bff;
+      font-size: 1.1em;
+      padding: 10px 20px;
+      border-radius: 10px;
+    }
+    .btn-primary:hover {
+      background-color: #0056b3;
+      border-color: #0056b3;
     }
   </style>
 </head>
@@ -39,9 +54,30 @@
         {% endfor %}
       </tbody>
     </table>
+    
+    <!-- Button to show Network Map -->
+    <div class="network-map">
+      <button type="button" class="btn btn-primary" onclick="showNetworkMap()">Show Network Map</button>
+    </div>
+    
+    <!-- Placeholder for Network Map -->
+    <div id="networkMapContainer" style="display: none;">
+      <!-- This is where the network map will be dynamically loaded -->
+    </div>
+    
+    <!-- Form to check LAN status -->
     <form action="/check_lan" method="post">
       <button type="submit" class="btn btn-primary">Check LAN Status</button>
     </form>
   </div>
+
+  <!-- JavaScript to load the network map dynamically -->
+  <script>
+    function showNetworkMap() {
+      var networkMapContainer = document.getElementById('networkMapContainer');
+      networkMapContainer.style.display = 'block';
+      networkMapContainer.innerHTML = '<img src="{{ url_for('static', filename='network_map.png') }}" alt="Network Map" class="img-fluid mt-3">';
+    }
+  </script>
 </body>
 </html>

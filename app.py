@@ -1,7 +1,9 @@
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, redirect, url_for
 import subprocess
 import platform
 import socket
+import os
+from networkmap import generate_network_map
 
 app = Flask(__name__)
 
@@ -27,7 +29,7 @@ def check_device_connection(ip_address):
         online_status = ping_test(ip_address)
         if not online_status:
             return False, []
-        
+
         open_ports = []
         for port in range(1, 1025):
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
@@ -35,9 +37,8 @@ def check_device_connection(ip_address):
                 result = s.connect_ex((ip_address, port))
                 if result == 0:
                     open_ports.append(port)
-        
+
         return True, open_ports
-    
     except Exception as e:
         print(f"An error occurred: {str(e)}")
         return False, []
@@ -73,26 +74,7 @@ def check_connected_devices(ip_range):
                 'ip': ip_address,
                 'ports': ports_info
             })
-    
     return devices, port_descriptions
-
-def check_lan_status(ip_range):
-    """Function to check LAN status for devices in the specified IP range."""
-    results = []
-    for i in range(1, 255):
-        ip_address = f"{ip_range}.{i}"
-        online_status = ping_test(ip_address)
-        if online_status:
-            results.append({
-                'ip': ip_address,
-                'status': 'online'
-            })
-        else:
-            results.append({
-                'ip': ip_address,
-                'status': 'offline'
-            })
-    return results
 
 @app.route('/')
 def index():
@@ -102,20 +84,17 @@ def index():
 @app.route('/scan', methods=['POST'])
 def scan_network():
     """Route to scan the network and display connected devices."""
-    ip_range = '192.168.1'  # Fixed IP range
-
+    ip_range = '192.168.1'  # Fixed IP range for scanning
     devices, port_descriptions = check_connected_devices(ip_range)
-    
     return render_template('results.html', devices=devices, port_descriptions=port_descriptions)
 
-@app.route('/check_lan', methods=['POST'])
-def check_lan():
-    """Route to check LAN status and display online/offline status."""
-    ip_range = '192.168.1'  # Fixed IP range for LAN check
-
-    connected_devices = request.form.getlist('connected_devices')
-    devices_status = [{'ip': ip, 'status': 'online' if ping_test(ip) else 'offline'} for ip in connected_devices]
-    return render_template('lanstatus.html', devices_status=devices_status)
+@app.route('/networkmap', methods=['POST'])
+def network_map():
+    """Route to generate and display the network map."""
+    ip_range = "192.168.1.1/24"  # Adjust IP range as needed
+    img_path = os.path.join('static', 'network_map.png')  # Path to save the network map image
+    generate_network_map(ip_range, img_path)  # Generate the network map (ensure no threading issues here)
+    return render_template('networkmap.html', img_path=img_path)  # Render template with the image path
 
 if __name__ == "__main__":
     app.run(debug=True)

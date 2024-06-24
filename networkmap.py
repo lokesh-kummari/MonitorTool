@@ -1,9 +1,15 @@
 import scapy.all as scapy
 import networkx as nx
+import matplotlib
+matplotlib.use('Agg')  # Use Agg backend
+
 import matplotlib.pyplot as plt
 
+from flask import Flask, send_file, request
+
+app = Flask(__name__)
+
 def scan_network(ip_range):
-    """Scan the network to find devices and their MAC addresses."""
     arp_request = scapy.ARP(pdst=ip_range)
     broadcast = scapy.Ether(dst="ff:ff:ff:ff:ff:ff")
     arp_request_broadcast = broadcast / arp_request
@@ -18,32 +24,42 @@ def scan_network(ip_range):
     
     return devices
 
-def draw_network_map(devices):
-    """Draw a network map using networkx and matplotlib."""
+def generate_network_map(ip_range, output_path):
+    devices = scan_network(ip_range)
+    if not devices:
+        print("No devices found.")
+        return
+
     G = nx.Graph()
     positions = {}
-    
-    # Add nodes and their attributes
+
     for i, device in enumerate(devices):
         G.add_node(device['ip'], mac=device['mac'])
-        # Position nodes with a vertical offset to avoid overlap
-        positions[device['ip']] = (i, 0)  # Position nodes along the x-axis
+        positions[device['ip']] = (i, 0)
 
-    # Draw nodes
-    nx.draw(G, pos=positions, with_labels=False, node_size=3000, node_color="lightblue", edge_color='gray')
-    
-    # Annotate nodes with IP addresses and MAC addresses
+    fig, ax = plt.subplots(figsize=(10, 6))  # Adjust the figure size as needed
+    nx.draw(G, pos=positions, with_labels=False, node_size=3000, node_color="lightblue", edge_color='gray', ax=ax)
+
     for node, (x, y) in positions.items():
-        plt.text(x, y + 0.1, node, fontsize=10, ha='center', va='center', color='black', weight='bold')  # IP above node
-        plt.text(x, y - 0.1, G.nodes[node]['mac'], fontsize=8, ha='center', va='center', color='gray')  # MAC below node
-    
-    plt.title("Network Map")
-    plt.show()
+        ax.text(x, y + 0.1, node, fontsize=10, ha='center', va='center', color='black', weight='bold')
+        ax.text(x, y - 0.1, G.nodes[node]['mac'], fontsize=8, ha='center', va='center', color='gray')
 
-if __name__ == "__main__":
-    ip_range = "192.168.1.1/24"  # Change this to your network's IP range
-    devices = scan_network(ip_range)
-    if devices:
-        draw_network_map(devices)
-    else:
-        print("No devices found. Please check your network settings and try again.")
+    ax.set_title("Network Map")
+    
+    # Save the figure directly to file without displaying it
+    fig.savefig(output_path)
+    plt.close(fig)
+
+
+@app.route('/generate_map', methods=['POST'])
+def handle_generate_map():
+    ip_range = request.form.get('ip_range')
+    output_path = '/path/to/save/networkmap.png'  # Specify your desired output path
+
+    generate_network_map(ip_range, output_path)
+
+    return send_file(output_path, mimetype='image/png')
+
+if __name__ == '__main__':
+    app.run(debug=True)
+
